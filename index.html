@@ -7,6 +7,54 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* --- Welcome Screen Overlay --- */
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff9ff3 0%, #feca57 100%);
+            z-index: 10000; /* Super high to cover everything */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease;
+        }
+
+        .welcome-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .welcome-content h1 {
+            font-family: 'Pacifico', cursive;
+            color: #ff6b9d;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .enter-btn {
+            background: #ff6b9d;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5em;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .enter-btn:hover {
+            transform: scale(1.1);
+        }
         :root {
             --primary-pink: #ff6b9d;
             --soft-pink: #ff8fab;
@@ -446,6 +494,14 @@
     </style>
 </head>
 <body>
+    <!-- Welcome Overlay -->
+    <div id="welcome-screen">
+        <div class="welcome-content">
+            <h1> My Bobo's Day 🥰 </h1>
+            <p>Turn up your volume! 🔊</p>
+            <button class="enter-btn" onclick="enterSite()">Enter 👅</button>
+        </div>
+    </div>
 
     <!-- Canvas for confetti -->
     <canvas id="confetti-canvas"></canvas>
@@ -498,7 +554,7 @@
         </div>
 
         <!-- Surprise Button -->
-        <button class="surprise-btn" onclick="openModal()">
+        <button class="surprise-btn" onclick="checkSurprise()">
             🎁 Click for a Surprise! 🎁
         </button>
 
@@ -531,7 +587,7 @@
                 </div>
                 <!-- Slide 2 -->
                 <div class="slide">
-                    <img src="photo2.jpeg" alt="Photo 2">
+                    <img src="photo2.jpg" alt="Photo 2">
                 </div>
                 <!-- Slide 3 -->
                 <div class="slide">
@@ -587,10 +643,11 @@
         </div>
     </div>
 
-    <!-- Hidden Audio Element (Add your file: birthday_song.mp3) -->
-    <!-- <audio id="bgMusic" loop>
+    <!-- Audio Element -->
+    <audio id="bgMusic" loop>
         <source src="birthday_song.mp3" type="audio/mpeg">
-    </audio> -->
+        Your browser does not support the audio element.
+    </audio>
 
     <script>
         // --- BALLOONS GENERATOR ---
@@ -618,6 +675,23 @@
             }
         }
         createBalloons();
+
+        // --- SURPRISE LOCK LOGIC ---
+        function checkSurprise() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            
+            // Date(Year, Month, Day) -> Month is 0-indexed, so 11 is December
+            const unlockDate = new Date(currentYear, 11, 17, 0, 0, 0); 
+
+            if (now < unlockDate) {
+                // If today is BEFORE the birthday
+                alert("Shhh! 🤫 No peeking! This surprise unlocks on December 17th!");
+            } else {
+                // If today is ON or AFTER the birthday
+                openModal();
+            }
+        }
 
         // --- COUNTDOWN LOGIC ---
         function updateCountdown() {
@@ -718,20 +792,53 @@
         }
 
         let isPlaying = false;
+        
         function toggleMusic() {
             const icon = document.getElementById("music-icon");
-            // const audio = document.getElementById("bgMusic"); 
-            // Uncomment above lines when you have the file
+            const audio = document.getElementById("bgMusic"); 
             
             isPlaying = !isPlaying;
-            if(isPlaying) {
-                icon.innerText = "🔇";
-                // audio.play();
-                alert("Please add a 'birthday_song.mp3' file to the folder to hear music!");
+            
+            if (isPlaying) {
+                // If we want to play
+                audio.play().then(() => {
+                    icon.innerText = "🔇"; // Show mute icon while playing
+                }).catch(error => {
+                    console.log("Audio play failed:", error);
+                    alert("Click the page once first, then try the music button!");
+                    isPlaying = false; // Reset if it failed
+                });
             } else {
-                icon.innerText = "🎵";
-                // audio.pause();
+                // If we want to pause
+                audio.pause();
+                icon.innerText = "🎵"; // Show music note while paused
             }
+        }
+        
+        // --- ENTER SITE LOGIC ---
+        function enterSite() {
+            // 1. Hide the welcome screen
+            const screen = document.getElementById('welcome-screen');
+            screen.style.opacity = '0';
+            
+            // Remove it from HTML after fade out so you can click other buttons
+            setTimeout(() => {
+                screen.style.display = 'none';
+            }, 800);
+
+            // 2. Play Music Immediately
+            const audio = document.getElementById("bgMusic");
+            const icon = document.getElementById("music-icon");
+            
+            audio.play().then(() => {
+                isPlaying = true;
+                icon.innerText = "🔇"; // Set icon to "Mute" since it's playing
+            }).catch(e => {
+                console.log("Audio still blocked:", e);
+            });
+            
+            // 3. Launch Confetti for effect
+            fireConfetti();
         }
 
         // --- CONFETTI (Simple Canvas Implementation) ---
